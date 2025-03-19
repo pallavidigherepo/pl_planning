@@ -1,29 +1,109 @@
 <script setup lang="ts">
 import { FormCheck, FormInput, FormLabel } from "@/components/Base/Form";
 import Button from "@/components/Base/Button";
+
+import { Dialog } from "@/components/Base/Headless";
 import _ from "lodash";
 import router from "@/router";
 import { useVuelidate } from '@vuelidate/core'
-import { required, email } from '@vuelidate/validators'
-import { reactive } from "vue";
+import { 
+  required,
+  email,
+  helpers,
+  minLength,
+  maxLength,
+  requiredIf, } from '@vuelidate/validators'
+import { reactive, computed, ref } from "vue";
+import store from "@/stores";
 
-const model = reactive({
+import TermsAndConditions from "@/views/TermsAndConditions.vue";
+import PrivacyPolicy from "@/views/PrivacyPolicy.vue";
+
+const loading = ref(false);
+const submitted = ref(false);
+const currentComponent = ref();
+const model = reactive({  
+  name: '',
   email: '',
   password: '',
   confirm_password: '',
-  name: '',
   terms: false,
 });
 
-const rules = {
-  email: { required, email },
-  password: { required },
-  confirm_password: { required },
-  name: { required },
-  terms: { required },
-};
 
-const v = useVuelidate(rules, model);
+const rules = computed(() => {
+  return {
+    name: {
+      required: helpers.withMessage(
+        "Please enter the your name.",
+        required
+      ),
+    },
+    email: {
+      required: helpers.withMessage(
+        "Please enter your email.",
+        required
+      ),
+      email: helpers.withMessage(
+        "Please enter valid email address.",
+        email
+      ),
+    },
+    password: {
+      required: helpers.withMessage(
+        "Please enter the password.",
+        required
+      ),
+    },
+    confirm_password: {
+        sameAsPassword: helpers.withMessage(
+        "Password and confirm password should be same.",
+        (value) => value === model.password
+    )},
+    terms: { 
+        required: helpers.withMessage(
+            "Please accept the terms and conditions.",
+            required
+        ),
+    },
+}
+});
+
+const v$ = useVuelidate(rules, model);
+
+async function submit () {
+    submitted.value = true;
+    v$.value.$validate();
+    if (v$.value.$error) {
+        return false;
+    }
+    await store
+    .dispatch("notes/save", model)
+    .then(() => {
+      loading.value = false;
+      submitted.value = false;
+      successNotification.value?.showToast();
+
+      router.push({ name: "Notes" });
+    })
+    .catch((err: any) => {
+      loading.value = false;
+      isErrored.value = true;
+      if (err.response) {
+        message.value = err.response.data.message;
+      }
+    });
+    return true;
+}
+
+const superlargeModalSizePreview = ref(false);
+const setSuperlargeModalSizePreview = (value: boolean) => {
+  superlargeModalSizePreview.value = value;
+};
+function showModel(component: any) {
+  currentComponent.value = component;
+  setSuperlargeModalSizePreview(true);
+}
 </script>
 
 <template>
@@ -64,93 +144,138 @@ const v = useVuelidate(rules, model);
             Already have an account?
             <RouterLink class="font-medium text-primary" :to="{ name: 'Login' }"> Sign In </RouterLink>
           </div>
-          <div class="mt-6">
-            <FormLabel>First Name*</FormLabel>
-            <FormInput
-              type="text"
-              class="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
-              placeholder="Enter your name"
-              v-model="model.name"
-            />
-            <FormLabel class="mt-5">Email*</FormLabel>
-            <FormInput
-              type="text"
-              class="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
-              placeholder="Enter your Email Address"
-              v-model="model.email"
-            />
-            <FormLabel class="mt-5">Password*</FormLabel>
-            <FormInput
-              type="password"
-              class="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
-              placeholder="************"
-              v-model="model.password"
-            />
-            <!-- <div class="grid w-full h-1.5 grid-cols-12 gap-4 mt-3.5">
-              <div
-                class="h-full col-span-3 border rounded active bg-slate-400/30 border-slate-400/20 [&.active]:bg-theme-1/30 [&.active]:border-theme-1/20"
-              ></div>
-              <div
-                class="h-full col-span-3 border rounded active bg-slate-400/30 border-slate-400/20 [&.active]:bg-theme-1/30 [&.active]:border-theme-1/20"
-              ></div>
-              <div
-                class="h-full col-span-3 border rounded active bg-slate-400/30 border-slate-400/20 [&.active]:bg-theme-1/30 [&.active]:border-theme-1/20"
-              ></div>
-              <div
-                class="h-full col-span-3 border rounded bg-slate-400/30 border-slate-400/20 [&.active]:bg-theme-1/30 [&.active]:border-theme-1/20"
-              ></div>
-            </div> -->
-            <!-- <a
-              href=""
-              class="block mt-3 text-xs text-slate-500/80 sm:text-sm dark:text-slate-400"
-            >
-              What is a secure password?
-            </a> -->
-            <FormLabel class="mt-5">Password Confirmation*</FormLabel>
-            <FormInput
-              type="password"
-              class="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
-              placeholder="************"
-              v-model="model.confirm_password"
-            />
-            <div
-              class="flex items-center mt-5 text-xs text-slate-500 sm:text-sm"
-            >
-              <FormCheck.Input
-                id="remember-me"
-                type="checkbox"
-                class="mr-2 border"
-                v-model="model.terms"
-              />
-              <label class="cursor-pointer select-none" htmlFor="remember-me">
-                I agree to the Planedge
-              </label>
-              <a class="ml-1 text-primary dark:text-slate-200" href="">
-                Privacy Policy
-              </a>
-              .
+          <form @submit.prevent="submit">
+            <div class="mt-6">
+                <FormLabel>Name*</FormLabel>
+                <FormInput
+                    type="text"
+                    class="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
+                    placeholder="Enter your name"
+                    v-model="model.name"
+                    :class="{
+                      'border-danger': submitted && v$.name.$errors.length,
+                    }"
+                />
+                <div :class="{ error: v$.name.$errors.length }">                
+                    <div class="text-danger" v-for="error of v$.name.$errors" :key="error.$uid">
+                        <div class="error-msg">{{ error.$message }}</div>
+                    </div>
+                </div>
+
+                <FormLabel class="mt-5">Email*</FormLabel>
+                <FormInput
+                    type="text"
+                    class="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
+                    placeholder="Enter your Email Address"
+                    v-model="model.email"
+                    :class="{
+                      'border-danger': submitted && v$.email.$errors.length,
+                    }"
+                />
+                <div :class="{ error: v$.email.$errors.length }">                
+                    <div class="text-danger" v-for="error of v$.email.$errors" :key="error.$uid">
+                        <div class="error-msg">{{ error.$message }}</div>
+                    </div>
+                </div>
+                <FormLabel class="mt-5">Password*</FormLabel>
+                <FormInput
+                type="password"
+                class="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
+                placeholder="************"
+                v-model="model.password"
+                :class="{
+                    'border-danger': submitted && v$.password.$errors.length,
+                }"
+                />
+                <div :class="{ error: v$.password.$errors.length }">                
+                    <div class="text-danger" v-for="error of v$.password.$errors" :key="error.$uid">
+                        <div class="error-msg">{{ error.$message }}</div>
+                    </div>
+                </div>
+                <!-- <div class="grid w-full h-1.5 grid-cols-12 gap-4 mt-3.5">
+                <div
+                    class="h-full col-span-3 border rounded active bg-slate-400/30 border-slate-400/20 [&.active]:bg-theme-1/30 [&.active]:border-theme-1/20"
+                ></div>
+                <div
+                    class="h-full col-span-3 border rounded active bg-slate-400/30 border-slate-400/20 [&.active]:bg-theme-1/30 [&.active]:border-theme-1/20"
+                ></div>
+                <div
+                    class="h-full col-span-3 border rounded active bg-slate-400/30 border-slate-400/20 [&.active]:bg-theme-1/30 [&.active]:border-theme-1/20"
+                ></div>
+                <div
+                    class="h-full col-span-3 border rounded bg-slate-400/30 border-slate-400/20 [&.active]:bg-theme-1/30 [&.active]:border-theme-1/20"
+                ></div>
+                </div> -->
+                <!-- <a
+                href=""
+                class="block mt-3 text-xs text-slate-500/80 sm:text-sm dark:text-slate-400"
+                >
+                What is a secure password?
+                </a> -->
+                <FormLabel class="mt-5">Password Confirmation*</FormLabel>
+                <FormInput
+                    type="password"
+                    class="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
+                    placeholder="************"
+                    v-model="model.confirm_password"
+                    :class="{
+                      'border-danger': submitted && v$.confirm_password.$errors.length,
+                    }"
+                />
+                <div :class="{ error: v$.confirm_password.$errors.length }">                
+                    <div class="text-danger" v-for="error of v$.confirm_password.$errors" :key="error.$uid">
+                        <div class="error-msg">{{ error.$message }}</div>
+                    </div>
+                </div>
+                <div
+                class="flex items-center mt-5 text-xs text-slate-500 sm:text-sm"
+                >
+                <FormCheck.Input
+                    id="privacy-policy"
+                    type="checkbox"
+                    class="mr-2 border"
+                    v-model="model.terms"
+                    :class="{
+                      'border-danger': submitted && v$.terms.$errors.length,
+                    }"
+                />
+                <div :class="{ error: v$.terms.$errors.length }">                
+                    <div class="text-danger" v-for="error of v$.terms.$errors" :key="error.$uid">
+                        <div class="error-msg">{{ error.$message }}</div>
+                    </div>
+                </div>
+                <label class="cursor-pointer select-none" htmlFor="privacy-policy">
+                    I agree to the Planedge
+                </label>
+                <a class="ml-1 text-primary dark:text-slate-200" href="#"
+                    @click="showModel('PrivacyPolicy')"
+                    >
+                    Privacy Policy
+                </a>
+                .
+                </div>
+                <div class="mt-5 text-center xl:mt-8 xl:text-left">
+                <Button
+                    variant="primary"
+                    rounded
+                    class="bg-gradient-to-r from-theme-1/70 to-theme-2/70 w-full py-3.5 xl:mr-3 dark:border-darkmode-400"
+                    type="submit"
+                >
+                    Sign Up
+                </Button>
+                <Button
+                    variant="outline-secondary"
+                    rounded
+                    class="bg-white/70 w-full py-3.5 mt-3 dark:bg-darkmode-400"
+                    @click="() => {
+                    router.push({ name: 'Login' });}"
+                >
+                    Sign In
+                </Button>
+                
+                </div>
             </div>
-            <div class="mt-5 text-center xl:mt-8 xl:text-left">
-              <Button
-                variant="primary"
-                rounded
-                class="bg-gradient-to-r from-theme-1/70 to-theme-2/70 w-full py-3.5 xl:mr-3 dark:border-darkmode-400"
-                type="submit"
-              >
-                Sign Up
-              </Button>
-              <Button
-                variant="outline-secondary"
-                rounded
-                class="bg-white/70 w-full py-3.5 mt-3 dark:bg-darkmode-400"
-                @click="() => {
-                  router.push({ name: 'Login' });}"
-              >
-                Sign In
-              </Button>
-              
-            </div>
-          </div>
+          </form>
         </div>
       </div>
     </div>
@@ -188,4 +313,18 @@ const v = useVuelidate(rules, model);
       </div>
     </div>
   </div>
+  <Dialog 
+        size="xl" 
+        :open="superlargeModalSizePreview"
+        class="overflow-auto" 
+        @close="
+        () => {
+            setSuperlargeModalSizePreview(false);
+        }
+        ">
+        <Dialog.Panel class="p-10 overflow-auto">
+            <TermsAndConditions v-if="currentComponent === 'TermsAndConditions'"></TermsAndConditions>
+            <PrivacyPolicy v-if="currentComponent === 'PrivacyPolicy'"></PrivacyPolicy>
+        </Dialog.Panel>
+    </Dialog>
 </template>
