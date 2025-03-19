@@ -1,5 +1,5 @@
 {
-  "name": "tailwise-vue",
+  "name": "Planedge Planning App",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -24,8 +24,9 @@
     "@fullcalendar/vue3": "6.1.10",
     "@headlessui/vue": "1.7.23",
     "@left4code/tw-starter": "4.0.1",
-    "@vuelidate/core": "2.0.3",
-    "@vuelidate/validators": "2.0.4",
+    "@vuelidate/core": "^2.0.3",
+    "@vuelidate/validators": "^2.0.4",
+    "axios": "^1.8.3",
     "chart.js": "4.4.1",
     "dayjs": "1.11.10",
     "dropzone": "6.0.0-beta.2",

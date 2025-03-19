@@ -1,10 +1,29 @@
 <script setup lang="ts">
 import { FormCheck, FormInput, FormLabel } from "@/components/Base/Form";
-import Tippy from "@/components/Base/Tippy";
-import users from "@/fakers/users";
 import Button from "@/components/Base/Button";
 import _ from "lodash";
-import ThemeSwitcher from "@/components/ThemeSwitcher";
+import router from "@/router";
+import { useVuelidate } from '@vuelidate/core'
+import { required, email } from '@vuelidate/validators'
+import { reactive } from "vue";
+
+const model = reactive({
+  email: '',
+  password: '',
+  confirm_password: '',
+  name: '',
+  terms: false,
+});
+
+const rules = {
+  email: { required, email },
+  password: { required },
+  confirm_password: { required },
+  name: { required },
+  terms: { required },
+};
+
+const v = useVuelidate(rules, model);
 </script>
 
 <template>
@@ -43,34 +62,31 @@ import ThemeSwitcher from "@/components/ThemeSwitcher";
           <div class="text-2xl font-medium">Sign Up</div>
           <div class="mt-2.5 text-slate-600 dark:text-slate-400">
             Already have an account?
-            <a class="font-medium text-primary" href=""> Sign In </a>
+            <RouterLink class="font-medium text-primary" :to="{ name: 'Login' }"> Sign In </RouterLink>
           </div>
           <div class="mt-6">
             <FormLabel>First Name*</FormLabel>
             <FormInput
               type="text"
               class="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
-              :placeholder="users.fakeUsers()[0].name.split(' ')[0]"
-            />
-            <FormLabel class="mt-5">Last Name*</FormLabel>
-            <FormInput
-              type="text"
-              class="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
-              :placeholder="users.fakeUsers()[0].name.split(' ')[1]"
+              placeholder="Enter your first name"
+              v-model="model.name"
             />
             <FormLabel class="mt-5">Email*</FormLabel>
             <FormInput
               type="text"
               class="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
-              :placeholder="users.fakeUsers()[0].email"
+              placeholder="Enter your Email Address"
+              v-model="model.email"
             />
             <FormLabel class="mt-5">Password*</FormLabel>
             <FormInput
               type="password"
               class="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
               placeholder="************"
+              v-model="model.password"
             />
-            <div class="grid w-full h-1.5 grid-cols-12 gap-4 mt-3.5">
+            <!-- <div class="grid w-full h-1.5 grid-cols-12 gap-4 mt-3.5">
               <div
                 class="h-full col-span-3 border rounded active bg-slate-400/30 border-slate-400/20 [&.active]:bg-theme-1/30 [&.active]:border-theme-1/20"
               ></div>
@@ -83,7 +99,7 @@ import ThemeSwitcher from "@/components/ThemeSwitcher";
               <div
                 class="h-full col-span-3 border rounded bg-slate-400/30 border-slate-400/20 [&.active]:bg-theme-1/30 [&.active]:border-theme-1/20"
               ></div>
-            </div>
+            </div> -->
             <a
               href=""
               class="block mt-3 text-xs text-slate-500/80 sm:text-sm dark:text-slate-400"
@@ -95,6 +111,7 @@ import ThemeSwitcher from "@/components/ThemeSwitcher";
               type="password"
               class="block px-4 py-3.5 rounded-[0.6rem] border-slate-300/80"
               placeholder="************"
+              v-model="model.confirm_password"
             />
             <div
               class="flex items-center mt-5 text-xs text-slate-500 sm:text-sm"
@@ -103,9 +120,10 @@ import ThemeSwitcher from "@/components/ThemeSwitcher";
                 id="remember-me"
                 type="checkbox"
                 class="mr-2 border"
+                v-model="model.terms"
               />
               <label class="cursor-pointer select-none" htmlFor="remember-me">
-                I agree to the Envato
+                I agree to the Planedge
               </label>
               <a class="ml-1 text-primary dark:text-slate-200" href="">
                 Privacy Policy
@@ -117,16 +135,20 @@ import ThemeSwitcher from "@/components/ThemeSwitcher";
                 variant="primary"
                 rounded
                 class="bg-gradient-to-r from-theme-1/70 to-theme-2/70 w-full py-3.5 xl:mr-3 dark:border-darkmode-400"
+                type="submit"
               >
-                Sign In
+                Sign Up
               </Button>
               <Button
                 variant="outline-secondary"
                 rounded
                 class="bg-white/70 w-full py-3.5 mt-3 dark:bg-darkmode-400"
+                @click="() => {
+                  router.push({ name: 'Login' });}"
               >
-                Sign Up
+                Sign In
               </Button>
+              
             </div>
           </div>
         </div>
@@ -157,58 +179,13 @@ import ThemeSwitcher from "@/components/ThemeSwitcher";
           class="leading-[1.4] text-[2.6rem] xl:text-5xl font-medium xl:leading-[1.2] text-white"
         >
           Embrace Excellence <br />
-          in Dashboard Development
+          in Project Planning Department
         </div>
         <div class="mt-5 text-base leading-relaxed xl:text-lg text-white/70">
-          Unlock the potential of Tailwise, where developers craft meticulously
-          structured, visually stunning dashboards with feature-rich modules.
-          Join us today to shape the future of your application development.
-        </div>
-        <div class="flex flex-col gap-3 mt-10 xl:items-center xl:flex-row">
-          <div class="flex items-center">
-            <div class="w-9 h-9 2xl:w-11 2xl:h-11 image-fit zoom-in">
-              <Tippy
-                as="img"
-                alt="Tailwise - Admin Dashboard Template"
-                class="rounded-full border-[3px] border-white/50"
-                :src="users.fakeUsers()[0].photo"
-                :content="users.fakeUsers()[0].name"
-              />
-            </div>
-            <div class="-ml-3 w-9 h-9 2xl:w-11 2xl:h-11 image-fit zoom-in">
-              <Tippy
-                as="img"
-                alt="Tailwise - Admin Dashboard Template"
-                class="rounded-full border-[3px] border-white/50"
-                :src="users.fakeUsers()[0].photo"
-                :content="users.fakeUsers()[0].name"
-              />
-            </div>
-            <div class="-ml-3 w-9 h-9 2xl:w-11 2xl:h-11 image-fit zoom-in">
-              <Tippy
-                as="img"
-                alt="Tailwise - Admin Dashboard Template"
-                class="rounded-full border-[3px] border-white/50"
-                :src="users.fakeUsers()[0].photo"
-                :content="users.fakeUsers()[0].name"
-              />
-            </div>
-            <div class="-ml-3 w-9 h-9 2xl:w-11 2xl:h-11 image-fit zoom-in">
-              <Tippy
-                as="img"
-                alt="Tailwise - Admin Dashboard Template"
-                class="rounded-full border-[3px] border-white/50"
-                :src="users.fakeUsers()[0].photo"
-                :content="users.fakeUsers()[0].name"
-              />
-            </div>
-          </div>
-          <div class="text-base xl:ml-2 2xl:ml-3 text-white/70">
-            Over 7k+ strong and growing! Your journey begins here.
-          </div>
+          "Without leaps of imagination or dreaming, we lose the excitement of possibilities. Dreaming, after all, is a form of planning." <br />
+          - Gloria Steinem
         </div>
       </div>
     </div>
   </div>
-  <ThemeSwitcher />
 </template>
