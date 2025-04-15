@@ -44,7 +44,7 @@ import router from "@/router";
           <div class="text-2xl font-medium">Sign In</div>
           <div class="mt-2.5 text-slate-600 dark:text-slate-400">
             Don't have an account?
-            <RouterLink class="font-medium text-primary" :to="{ name: 'register' }"> Sign Up </RouterLink>
+            <RouterLink class="font-medium text-primary" :to="{ name: 'Register' }"> Sign Up </RouterLink>
           </div>
           <Alert
             variant="outline-primary"
